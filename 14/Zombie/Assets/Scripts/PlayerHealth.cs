@@ -15,34 +15,63 @@ public class PlayerHealth : LivingEntity {
     private PlayerMovement playerMovement; // 플레이어 움직임 컴포넌트
     private PlayerShooter playerShooter; // 플레이어 슈터 컴포넌트
 
-    private void Awake() {
-        // 사용할 컴포넌트를 가져오기
+    private void Awake()
+    {
+        playerAnimator = GetComponent<Animator>();
+        playerAudioPlayer = GetComponent<AudioSource>();
+        playerMovement = GetComponent<PlayerMovement>();
+        playerShooter = GetComponent<PlayerShooter>();
     }
 
-    protected override void OnEnable() {
+    protected override void OnEnable() 
+    {
         // LivingEntity의 OnEnable() 실행 (상태 초기화)
         base.OnEnable();
+        healthSlider.gameObject.SetActive(true);
+        healthSlider.maxValue = startingHealth;
+        healthSlider.value = health;
+        playerMovement.enabled = true;
+        playerShooter.enabled = true;
     }
 
     // 체력 회복
-    public override void RestoreHealth(float newHealth) {
+    public override void RestoreHealth(float newHealth) 
+    {
         // LivingEntity의 RestoreHealth() 실행 (체력 증가)
         base.RestoreHealth(newHealth);
+        healthSlider.value = health;
     }
 
     // 데미지 처리
     public override void OnDamage(float damage, Vector3 hitPoint, Vector3 hitDirection) {
         // LivingEntity의 OnDamage() 실행(데미지 적용)
+        if (!dead)
+        {
+            playerAudioPlayer.PlayOneShot(hitClip);
+        }
         base.OnDamage(damage, hitPoint, hitDirection);
+        healthSlider.value = health;
     }
 
     // 사망 처리
-    public override void Die() {
+    public override void Die() 
+    {
         // LivingEntity의 Die() 실행(사망 적용)
         base.Die();
+        healthSlider.gameObject.SetActive(false);
+        playerAudioPlayer.PlayOneShot(deathClip);
+        playerAnimator.SetTrigger("Die");
+        playerMovement.enabled = false;
+        playerShooter.enabled = false;
     }
 
-    private void OnTriggerEnter(Collider other) {
+    private void OnTriggerEnter(Collider other)
+    {
         // 아이템과 충돌한 경우 해당 아이템을 사용하는 처리
+        if (dead) return;
+        var item = other.GetComponent<IItem>();
+        if (item == null) return;
+        item.Use(gameObject);
+        playerAudioPlayer.PlayOneShot(itemPickupClip);
     }
 }
