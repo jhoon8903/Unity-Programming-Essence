@@ -11,32 +11,57 @@ public class LobbyManager : MonoBehaviourPunCallbacks {
     public Button joinButton; // 룸 접속 버튼
 
     // 게임 실행과 동시에 마스터 서버 접속 시도
-    private void Start() {
-        
+    private void Start()
+    {
+        PhotonNetwork.GameVersion = gameVersion;
+        PhotonNetwork.ConnectUsingSettings();
+        joinButton.interactable = false;
+        connectionInfoText.text = "Connecting to Master Server...";
     }
 
     // 마스터 서버 접속 성공시 자동 실행
-    public override void OnConnectedToMaster() {
-        
+    public override void OnConnectedToMaster()
+    {
+        joinButton.interactable = true;
+        connectionInfoText.text = "Online : Connected Master Server";
     }
 
     // 마스터 서버 접속 실패시 자동 실행
-    public override void OnDisconnected(DisconnectCause cause) {
-        
+    public override void OnDisconnected(DisconnectCause cause)
+    {
+        joinButton.interactable = false;
+        connectionInfoText.text = "Offline : Disconnected Master Server\nRetrying...";
+        PhotonNetwork.ConnectUsingSettings();
     }
 
     // 룸 접속 시도
-    public void Connect() {
-        
+    public void Connect()
+    {
+        joinButton.interactable = false;
+        if (PhotonNetwork.IsConnected)
+        {
+            connectionInfoText.text = "Connected Room";
+            PhotonNetwork.JoinRandomRoom();
+        }
+        else
+        {
+            connectionInfoText.text = "Offline";
+            PhotonNetwork.ConnectUsingSettings();
+        }
     }
 
     // (빈 방이 없어)랜덤 룸 참가에 실패한 경우 자동 실행
-    public override void OnJoinRandomFailed(short returnCode, string message) {
-        
+    public override void OnJoinRandomFailed(short returnCode, string message)
+    {
+        connectionInfoText.text = "No Empty Room, Create New Game Room";
+        PhotonNetwork.CreateRoom(null, new RoomOptions { MaxPlayers = 4 });
+
     }
 
     // 룸에 참가 완료된 경우 자동 실행
-    public override void OnJoinedRoom() {
-        
+    public override void OnJoinedRoom()
+    {
+        connectionInfoText.text = "Succeed Join Room";
+        PhotonNetwork.LoadLevel("Main");
     }
 }
